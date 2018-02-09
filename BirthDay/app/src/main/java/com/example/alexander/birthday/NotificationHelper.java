@@ -31,61 +31,39 @@ public class NotificationHelper {
     private static AlarmManager alarmManagerRTC;
     private static PendingIntent alarmIntentRTC;
 
-    public static void scheduleRepeatingRTCNotification(Context context) {
-        Date date = getNextDateNotification(GetAllNotification(context));
+    public static void scheduleNotification(Context context) {
+        Date date = getNextDateNotification(getAllNotification(context));
+        if (date == null) return;
         Intent intent = new Intent(context, AlarmReceiver.class);
         alarmIntentRTC = PendingIntent.getBroadcast(context, ALARM_TYPE_RTC, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         alarmManagerRTC = (AlarmManager)context.getSystemService(ALARM_SERVICE);
         alarmManagerRTC.setExact(AlarmManager.RTC_WAKEUP, date.getTime(),alarmIntentRTC);
     }
 
-    public static void cancelAlarmRTC() {
-        if (alarmManagerRTC!= null) {
-            alarmManagerRTC.cancel(alarmIntentRTC);
-        }
-    }
-
     public static NotificationManager getNotificationManager(Context context) {
         return (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
-    public static void enableBootReceiver(Context context) {
-        ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
-        PackageManager pm = context.getPackageManager();
+    public static Notification buildLocalNotification(Context context, Notify note) {
 
-        pm.setComponentEnabledSetting(receiver,
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                PackageManager.DONT_KILL_APP);
-    }
-
-    public static void disableBootReceiver(Context context) {
-        ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
-        PackageManager pm = context.getPackageManager();
-
-        pm.setComponentEnabledSetting(receiver,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP);
-    }
-
-    public static Notification buildLocalNotification(Context context, String name) {
-
+        int diff = Utils.getDiffYears(Calendar.getInstance().getTime(), note.date);
         NotificationCompat.Builder builder =
                 (NotificationCompat.Builder) new NotificationCompat.Builder(context)
                         .setSmallIcon(android.R.drawable.arrow_up_float)
-                        .setContentTitle("Today Birthday of " + name)
+                        .setContentTitle("Today is "+ note.name + "'s birthday !")
+                        .setContentText("He turned "+ diff + " years old")
                         .setWhen(Calendar.getInstance().getTime().getTime())
                         .setAutoCancel(true);
 
         return builder.build();
     }
 
-
     public static ArrayList<Notification> getTodayNotification(Context context, ArrayList<Notify> notifies){
         ArrayList<Notification> result = new ArrayList<>();
         Calendar calendar = Calendar.getInstance();
         for (Notify note : notifies){
             if (calendar.getTime().getDay() == note.date.getDay() && calendar.getTime().getMonth() ==  note.date.getMonth()){
-                result.add(buildLocalNotification(context, note.name));
+                result.add(buildLocalNotification(context, note));
             }
         }
         return result;
@@ -119,24 +97,12 @@ public class NotificationHelper {
                 return next;
             }
         }
-        return new Date();
+        return null;
     }
 
-    public static ArrayList<Notify> GetAllNotification(Context context){
+    public static ArrayList<Notify> getAllNotification(Context context){
 
-        String[] projection = {
-                BirthContract.ManEntry._ID,
-                BirthContract.ManEntry.COLUMN_NAME,
-                BirthContract.ManEntry.COLUMN_DATE};
-
-        Cursor cursor = context.getContentResolver().query(
-                BirthContract.ManEntry.CONTENT_URI,   // The content URI of the words table
-                projection,                        // The columns to return for each row
-                null,                   // Selection criteria
-                null,                     // Selection criteria
-                null);
-
-
+        Cursor cursor = context.getContentResolver().query(BirthContract.ManEntry.CONTENT_URI,BirthContract.getProtection(),null,null,null);
         ArrayList<Notify> resultList = new ArrayList<>();
 
         if (null != cursor && cursor.getCount() >= 1){
@@ -155,6 +121,30 @@ public class NotificationHelper {
             }
         }
         return resultList;
+    }
+
+    public static void enableBootReceiver(Context context) {
+        ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
+        PackageManager pm = context.getPackageManager();
+
+        pm.setComponentEnabledSetting(receiver,
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP);
+    }
+
+    public static void disableBootReceiver(Context context) {
+        ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
+        PackageManager pm = context.getPackageManager();
+
+        pm.setComponentEnabledSetting(receiver,
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+    }
+
+    public static void cancelAlarmRTC() {
+        if (alarmManagerRTC!= null) {
+            alarmManagerRTC.cancel(alarmIntentRTC);
+        }
     }
 
     private static class Notify{

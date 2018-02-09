@@ -10,6 +10,7 @@ import android.widget.CursorAdapter;
 import android.widget.TextView;
 
 import com.example.alexander.birthday.R;
+import com.example.alexander.birthday.Utils;
 import com.example.alexander.birthday.data.BirthContract.ManEntry;
 
 import java.text.ParseException;
@@ -53,7 +54,7 @@ public class BirthCursorAdapter extends CursorAdapter {
         }
 
         nameTextView.setText(name);
-        int old = Calendar.getInstance().getTime().getYear() - cal.getTime().getYear();
-        summaryTextView.setText(sdf.format(cal.getTime()) +  " возвраст: " + old + " года");
+        int diff = Utils.getDiffYears(Calendar.getInstance().getTime(), cal.getTime());
+        summaryTextView.setText(String.format("%s возвраст: %d лет", sdf.format(cal.getTime()), diff));
     }
 }

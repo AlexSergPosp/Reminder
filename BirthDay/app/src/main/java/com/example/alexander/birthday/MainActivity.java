@@ -31,24 +31,21 @@ import android.widget.AdapterView;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.alexander.birthday.data.BirthContract;
 import com.example.alexander.birthday.data.BirthCursorAdapter;
 import com.example.alexander.birthday.data.BirthDBHelper;
-
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import static com.example.alexander.birthday.data.BirthContract.*;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>{
 
     private static final int ELEMENTS_LOADER = 0;
-    private PendingIntent pendingIntent;
     private BirthDBHelper mDbHelper;
     BirthCursorAdapter  mCursorAdapter;
     @Override
@@ -59,32 +56,24 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ShowCreateAllert(null);
-            }
-        });
+        fab.setOnClickListener(view -> showCreateAllert(null));
 
         mDbHelper = new BirthDBHelper(this);
-
         ListView guestListView = (ListView) findViewById(R.id.list);
         View emptyView = findViewById(R.id.empty_view);
         guestListView.setEmptyView(emptyView);
-
         mCursorAdapter = new BirthCursorAdapter(this, null);
         guestListView.setAdapter(mCursorAdapter);
-
-
         getLoaderManager().initLoader(ELEMENTS_LOADER, null, this);
+        guestListView.setOnItemClickListener((parent, view, position, id) -> {
+            Uri currentGuestUri = ContentUris.withAppendedId(ManEntry.CONTENT_URI, id);
+            showCreateAllert(currentGuestUri);
+        });
 
-
-        guestListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Uri currentGuestUri = ContentUris.withAppendedId(ManEntry.CONTENT_URI, id);
-                ShowCreateAllert(currentGuestUri);
-            }
+        guestListView.setOnItemLongClickListener((parent, view, position, id) -> {
+            String name = ((TextView)view.findViewById(R.id.name)).getText().toString();
+            deleteElement(name);
+            return true;
         });
     }
 
@@ -99,30 +88,28 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         int id = item.getItemId();
 
         if (id == R.id.action_clearTable) {
-            deleteGuest();
+            deleteElement();
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
-    private void deleteGuest() {
+    private void deleteElement() {
 
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
-        db.delete(ManEntry.TABLE_NAME, null, null);
+        Runnable run = () -> getContentResolver().delete(ManEntry.CONTENT_URI, null, null);
+        allert("ATTENTION", "Do you want to delete all data ?", run);
+    }
+    private void deleteElement(String name) {
+
+        Runnable run = () -> getContentResolver().delete(ManEntry.CONTENT_URI, ManEntry.COLUMN_NAME+"=?", new String[]{name});
+        allert("ATTENTION", "Do you want to delete this man ?", run);
     }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        String[] projection = {
-                ManEntry._ID,
-                ManEntry.COLUMN_NAME,
-                ManEntry.COLUMN_DATE};
-
-        // Загрузчик запускает запрос ContentProvider в фоновом потоке
         return new CursorLoader(this,
                 ManEntry.CONTENT_URI,   // URI контент-провайдера для запроса
-                projection,             // колонки, которые попадут в результирующий курсор
+                BirthContract.getProtection(),             // колонки, которые попадут в результирующий курсор
                 null,                   // без условия WHERE
                 null,                   // без аргументов
                 null);
@@ -141,11 +128,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
     public String m_Text;
-    public void ShowCreateAllert(Uri u){
+    public void showCreateAllert(Uri u){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter name");
         View viewInflated = LayoutInflater.from(this).inflate(R.layout.create_new, null, false);
         final EditText input = (EditText) viewInflated.findViewById(R.id.input);
+        input.setMaxLines(2);
+
         builder.setView(viewInflated);
         viewInflated.setPadding(30, 100 ,30, 100);
 
@@ -169,19 +158,29 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private Calendar date;
     private Uri uri;
+
     public void showDateTimePicker(Uri u) {
         final Calendar currentDate = Calendar.getInstance();
         date = Calendar.getInstance();
         this.uri = u;
-        new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
-            @Override
-            public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                date.set(year, monthOfYear, dayOfMonth);
-                saveGuest(uri);
+        new DatePickerDialog(this, (view, year, monthOfYear, dayOfMonth) -> {
+            date.set(year, monthOfYear, dayOfMonth);
+            saveGuest(uri);
 
-            }
         }, currentDate.get(Calendar.YEAR), currentDate.get(Calendar.MONTH), currentDate.get(Calendar.DATE)).show();
     }
+
+
+    public void allert(String title, String desc, final Runnable run)
+    {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        dialog.setTitle(title);
+        dialog.setMessage(desc);
+        dialog.setNegativeButton("cancel", (dialog12, which) -> dialog12.cancel());
+        dialog.setPositiveButton("approve", (dialog1, which) -> run.run());
+        dialog.show();
+    }
+
 
     private void saveGuest(Uri uri) {
 
@@ -219,11 +218,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         }
 
-        update();
-    }
-
-    private void update(){
-
-       NotificationHelper.scheduleRepeatingRTCNotification(this);
+        NotificationHelper.scheduleNotification(this);
     }
 }

@@ -104,11 +104,13 @@ public class BContentProvider extends ContentProvider {
         switch (match) {
             case BIRTHS:
                 // Delete all rows that match the selection and selection args
+                getContext().getContentResolver().notifyChange(uri, null);
                 return database.delete(ManEntry.TABLE_NAME, selection, selectionArgs);
             case BIRTH_ID:
                 // Delete a single row given by the ID in the URI
                 selection = ManEntry._ID + "=?";
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                getContext().getContentResolver().notifyChange(uri, null);
                 return database.delete(ManEntry.TABLE_NAME, selection, selectionArgs);
             default:
                 throw new IllegalArgumentException("Deletion is not supported for " + uri);

@@ -33,4 +33,14 @@ public final class BirthContract {
         public final static String COLUMN_NAME = "name";
         public final static String COLUMN_DATE = "date";
     }
+
+    public static String[] getProtection() {
+
+        String[] projection = {
+                BirthContract.ManEntry._ID,
+                BirthContract.ManEntry.COLUMN_NAME,
+                BirthContract.ManEntry.COLUMN_DATE};
+
+        return projection;
+    }
 }

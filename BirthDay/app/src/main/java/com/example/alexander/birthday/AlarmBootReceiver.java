@@ -17,11 +17,11 @@ public class AlarmBootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
 
-            ArrayList<Notification> todayNotes = NotificationHelper.getTodayNotification(context,NotificationHelper.GetAllNotification(context));
+            ArrayList<Notification> todayNotes = NotificationHelper.getTodayNotification(context,NotificationHelper.getAllNotification(context));
             for (Notification note : todayNotes){
                 NotificationHelper.getNotificationManager(context).notify(new Random(100).nextInt(), note);
             }
-            NotificationHelper.scheduleRepeatingRTCNotification(context);
+            NotificationHelper.scheduleNotification(context);
         }
     }
 }

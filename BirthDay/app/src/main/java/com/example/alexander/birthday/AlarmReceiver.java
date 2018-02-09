@@ -1,7 +1,6 @@
 package com.example.alexander.birthday;
 
 import android.app.Notification;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -19,11 +18,11 @@ public class AlarmReceiver extends BroadcastReceiver {
         Intent intentToRepeat = new Intent(context, MainActivity.class);
         intentToRepeat.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
-        ArrayList<Notification> todayNotes = NotificationHelper.getTodayNotification(context,NotificationHelper.GetAllNotification(context));
+        ArrayList<Notification> todayNotes = NotificationHelper.getTodayNotification(context,NotificationHelper.getAllNotification(context));
         for (Notification note : todayNotes){
             NotificationHelper.getNotificationManager(context).notify(new Random(100).nextInt(), note);
         }
-        NotificationHelper.scheduleRepeatingRTCNotification(context);
+        NotificationHelper.scheduleNotification(context);
 
     }
 }
