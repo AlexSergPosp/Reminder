@@ -51,7 +51,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private PendingIntent pendingIntent;
     private BirthDBHelper mDbHelper;
     BirthCursorAdapter  mCursorAdapter;
-    private NotificationController notificationController;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,8 +86,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 ShowCreateAllert(currentGuestUri);
             }
         });
-
-        notificationController = new NotificationController(this);
     }
 
     @Override
@@ -227,41 +224,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private void update(){
 
-        String[] projection = {
-                ManEntry._ID,
-                ManEntry.COLUMN_NAME,
-                ManEntry.COLUMN_DATE};
-
-        Cursor cursor = getContentResolver().query(
-                ManEntry.CONTENT_URI,   // The content URI of the words table
-                projection,                        // The columns to return for each row
-                null,                   // Selection criteria
-            null,                     // Selection criteria
-                null);
-
-
-        Calendar cal = Calendar.getInstance();
-        HashMap<String, Date> map = new HashMap<String, Date>();
-        if (null != cursor && cursor.getCount() >= 1){
-            while (cursor.moveToNext()) {
-
-                int nameColumnIndex = cursor.getColumnIndex(ManEntry.COLUMN_NAME);
-                int dateColumnIndex = cursor.getColumnIndex(ManEntry.COLUMN_DATE);
-
-                String name = cursor.getString(nameColumnIndex);
-                String date = cursor.getString(dateColumnIndex);
-
-                SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH);
-
-                try {
-                    cal.setTime(sdf.parse(date));// all done
-                    map.put(name, cal.getTime());
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }
-        notificationController.ReloadAllNotification(map);
+       NotificationHelper.scheduleRepeatingRTCNotification(this);
     }
 }

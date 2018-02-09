@@ -23,8 +23,8 @@
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
-        android:layout_width="81dp"
-        android:layout_height="89dp"
+        android:layout_width="69dp"
+        android:layout_height="64dp"
         android:layout_gravity="bottom|end"
         android:layout_marginBottom="25dp"
         android:layout_marginRight="25dp"
@@ -34,8 +34,8 @@
         android:fadeScrollbars="true"
         android:paddingBottom="30sp"
         app:srcCompat="@mipmap/ic_add_white_24dp"
-        tools:layout_editor_absoluteX="278dp"
-        tools:layout_editor_absoluteY="453dp" />
+        tools:layout_editor_absoluteX="290dp"
+        tools:layout_editor_absoluteY="478dp" />
 
     <include
         android:id="@+id/include3"

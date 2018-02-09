@@ -1,6 +1,7 @@
 package com.example.alexander.birthday;
 
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ComponentName;
@@ -16,8 +17,10 @@ import com.example.alexander.birthday.data.BirthContract;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import static android.content.Context.ALARM_SERVICE;
@@ -29,18 +32,11 @@ public class NotificationHelper {
     private static PendingIntent alarmIntentRTC;
 
     public static void scheduleRepeatingRTCNotification(Context context) {
-        Calendar calendar = Calendar.getInstance();
-        Notify note = GetNextNotification(context);
-        calendar.setTimeInMillis(note.date.getTime());
-        Calendar currentDate =  Calendar.getInstance();
-
-        calendar.set(currentDate.get(Calendar.YEAR), 8,0, 8,0);
-
+        Date date = getNextDateNotification(GetAllNotification(context));
         Intent intent = new Intent(context, AlarmReceiver.class);
         alarmIntentRTC = PendingIntent.getBroadcast(context, ALARM_TYPE_RTC, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         alarmManagerRTC = (AlarmManager)context.getSystemService(ALARM_SERVICE);
-
-        //alarmManagerRTC.setInexactRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, alarmIntentRTC);
+        alarmManagerRTC.setExact(AlarmManager.RTC_WAKEUP, date.getTime(),alarmIntentRTC);
     }
 
     public static void cancelAlarmRTC() {
@@ -53,9 +49,6 @@ public class NotificationHelper {
         return (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
-    /**
-     * Enable boot receiver to persist alarms set for notifications across device reboots
-     */
     public static void enableBootReceiver(Context context) {
         ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
         PackageManager pm = context.getPackageManager();
@@ -65,9 +58,6 @@ public class NotificationHelper {
                 PackageManager.DONT_KILL_APP);
     }
 
-    /**
-     * Disable boot receiver when user cancels/opt-out from notifications
-     */
     public static void disableBootReceiver(Context context) {
         ComponentName receiver = new ComponentName(context, AlarmBootReceiver.class);
         PackageManager pm = context.getPackageManager();
@@ -77,22 +67,62 @@ public class NotificationHelper {
                 PackageManager.DONT_KILL_APP);
     }
 
-
-    public static NotificationCompat.Builder buildLocalNotification(Context context, PendingIntent pendingIntent) {
-
-        Notify note = GetNextNotification(context);
+    public static Notification buildLocalNotification(Context context, String name) {
 
         NotificationCompat.Builder builder =
                 (NotificationCompat.Builder) new NotificationCompat.Builder(context)
-                        .setContentIntent(pendingIntent)
                         .setSmallIcon(android.R.drawable.arrow_up_float)
-                        .setContentTitle("Birthday notification " + note.name)
+                        .setContentTitle("Today Birthday of " + name)
+                        .setWhen(Calendar.getInstance().getTime().getTime())
                         .setAutoCancel(true);
 
-        return builder;
+        return builder.build();
     }
 
-    public static Notify GetNextNotification(Context context){
+
+    public static ArrayList<Notification> getTodayNotification(Context context, ArrayList<Notify> notifies){
+        ArrayList<Notification> result = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+        for (Notify note : notifies){
+            if (calendar.getTime().getDay() == note.date.getDay() && calendar.getTime().getMonth() ==  note.date.getMonth()){
+                result.add(buildLocalNotification(context, note.name));
+            }
+        }
+        return result;
+    }
+
+    public static Date getNextDateNotification(ArrayList<Notify> notifies){
+
+        Calendar calendar = Calendar.getInstance();
+        Date next;
+        for (Notify note : notifies){
+
+             Calendar currentYear = Calendar.getInstance();
+             currentYear.setTime(note.date);
+             currentYear.set(Calendar.YEAR, calendar.get(Calendar.YEAR));
+             currentYear.add(Calendar.DAY_OF_MONTH, 1);
+
+             if (currentYear.getTime().getTime() >= calendar.getTime().getTime()){
+                 next = currentYear.getTime();
+                 return next;
+             }
+        }
+
+        for (Notify note : notifies){
+            Calendar currentYear = Calendar.getInstance();
+            currentYear.setTime(note.date);
+            currentYear.set(Calendar.YEAR, calendar.get(Calendar.YEAR));
+            currentYear.add(Calendar.YEAR, 1);
+
+            if (currentYear.getTime().getTime() >= calendar.getTime().getTime()){
+                next = currentYear.getTime();
+                return next;
+            }
+        }
+        return new Date();
+    }
+
+    public static ArrayList<Notify> GetAllNotification(Context context){
 
         String[] projection = {
                 BirthContract.ManEntry._ID,
@@ -106,7 +136,8 @@ public class NotificationHelper {
                 null,                     // Selection criteria
                 null);
 
-        Notify notify = new Notify("", new Date(Long.MAX_VALUE));
+
+        ArrayList<Notify> resultList = new ArrayList<>();
 
         if (null != cursor && cursor.getCount() >= 1){
             while (cursor.moveToNext()) {
@@ -115,23 +146,16 @@ public class NotificationHelper {
                 SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH);
                 try {
                     Date result = sdf.parse(date);
-                    if (notify.date.getTime() <  result.getTime()){
-                        notify.date = result;
-                        notify.name = name;
-                    }
+                    Notify notify = new Notify(name, result);
+                    resultList.add(notify);
+
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
             }
-            return notify;
         }
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(new Date());
-        cal.add(Calendar.YEAR, 0); // to get previous year add -1
-        Date nextYear = cal.getTime();
+        return resultList;
     }
-
 
     private static class Notify{
         public String name;
