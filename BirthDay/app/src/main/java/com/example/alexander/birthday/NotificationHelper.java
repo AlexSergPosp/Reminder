@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import static android.content.Context.ALARM_SERVICE;
 
@@ -52,8 +53,7 @@ public class NotificationHelper {
                         .setSmallIcon(android.R.drawable.arrow_up_float)
                         .setContentTitle("Today is "+ note.name + "'s birthday !")
                         .setContentText("He turned "+ diff + " years old")
-                        .setWhen(Calendar.getInstance().getTime().getTime())
-                        .setAutoCancel(true);
+                        .setWhen(Calendar.getInstance().getTime().getTime());
 
         return builder.build();
     }
@@ -77,9 +77,9 @@ public class NotificationHelper {
 
              Calendar currentYear = Calendar.getInstance();
              currentYear.setTime(note.date);
+             currentYear.set(Calendar.HOUR, 0);
              currentYear.set(Calendar.YEAR, calendar.get(Calendar.YEAR));
-             currentYear.add(Calendar.DAY_OF_MONTH, 1);
-
+             currentYear.setTimeZone(TimeZone.getDefault());
              if (currentYear.getTime().getTime() >= calendar.getTime().getTime()){
                  next = currentYear.getTime();
                  return next;
