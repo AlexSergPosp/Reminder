@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#E1145F</color>
+    <color name="colorPrimaryDark">#BB1058</color>
+    <color name="colorAccent">#E1145F</color>
+    <color name="list_back_color">#fafafa</color>
+</resources>
